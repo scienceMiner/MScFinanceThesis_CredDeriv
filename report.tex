@@ -1,0 +1,96 @@
+\def \ttb{\begin{ttfamily}}
+\def \tte{\end{ttfamily}}
+\def \na{\newcounter{alg}\setcounter{alg}{1}\arabic{alg}}
+\def \ra{\setcounter{alg}{1}\arabic{alg}}
+\def \sa{\stepcounter{alg}\arabic{alg}}
+\def \line{\renewcommand{\baselinestretch}{1}}
+
+\documentclass[10pt,oneside]{erc_bbk_report}
+\usepackage[pdftex]{graphicx}
+\usepackage{latexsym,erc_bbk,makeidx,epstopdf,amssymb,apalike,amsmath}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{setspace}
+
+%\usepackage{yfonts}
+%\usepackage{helvet} % Helvetica as \ sfdefault
+%\usepackage[T1]{fontenc}
+%\usepackage{textcomp}
+%\renewcommand{\familydefault}{\sfdefault }
+
+%\usepackage{pxfonts} % Also loads Helvetica and PXTT
+%\usepackage[T1]{fontenc}
+%\usepackage{textcomp}
+
+%\usepackage{bera}
+%\usepackage{kerkis}
+
+%\usepackage[T1]{fontenc}
+%\usepackage[math]{kurier}
+
+%\usepackage[T1]{fontenc}
+%\usepackage{txfonts} % Also loads Helvetica and TXTT
+%\usepackage{textcomp}\begin{center}
+
+\usepackage{epstopdf}
+
+\makeindex
+
+\title{An Investigation into Price Surfaces for Credit Derivatives} 
+
+\author{
+Ethan Richard Collopy
+}
+
+\date{29 August 2008}  
+
+\newcommand{\avec}[1]{\ensuremath{#1_1, \ldots, #1_n}}
+\newcommand{\angavec}[1]{\ensuremath{\langle #1_1, \ldots, #1_n \rangle}}
+
+\includeonly{abstract/abstract,contents/contents,introduction/symbol-index,introduction/introduction,review/review,investigation/investigation,conclusion/conclusion,exp_meth/exp_meth,code/code}
+
+\begin{document}         
+
+%\sfdefault
+%\fontfamily{maksf}
+%\usefont{U}{yinit}{m}{n}
+%\lstset{language=Pascal}
+
+\pagenumbering{arabic}
+
+\maketitle 
+%\bibliographystyle{alpha}
+\bibliographystyle{apalike}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{algorithm}{Algorithm}
+\newtheorem{example}{Example}[section]
+
+
+\include{abstract/abstract}
+\include{contents/contents}
+\include{introduction/symbol-index}
+\include{introduction/introduction}
+\include{review/review}
+\include{investigation/investigation}
+\include{conclusion/conclusion}
+
+{\setlength{\baselineskip}{14pt}
+\bibliography{CredDeriv}
+}
+
+\appendix
+
+\include{exp_meth/exp_meth}
+\include{code/code}
+
+{\setlength{\baselineskip}{13pt}
+\printindex
+}
+
+\end{document}
+

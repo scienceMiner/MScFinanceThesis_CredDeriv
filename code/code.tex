@@ -1,0 +1,511 @@
+\chapter{Code Listings}\label{app:code}
+
+This appendix contains the R source code developed for this project. 
+Base Correlation required simple extensions to the standard CDO pricing method
+and the implied correlation method whereby the price of the previous equity tranche
+is incorporated into the current price, given that this is fixed. This is fully detailed in \cite{KL2004} and not
+presented to save space.
+
+\section{CDO Pricing}\label{sec:cdo_price}
+\begin{singlespace}
+\lstset{basicstyle=\scriptsize, 
+keywordstyle=\color{black}\bfseries,
+commentstyle=\color{white}, % white comments
+stringstyle=\ttfamily, % typewriter type for strings
+belowskip=0pt,
+aboveskip=0pt,
+showstringspaces=false}
+
+\begin{lstlisting}
+# function created for matrix generation
+repmat <- function(a,n,m) {kronecker(matrix(1,n,m),a)}
+
+CDOPrice <- function(N,R,lambdaf,rho,n,c,a,d,r,No,flag)  
+{  
+ # N - number of entities
+ # R = recovery rate
+ #lambdaf = default intensity
+ #rho = pairwise correlation
+ #n = 1
+ #c = 1
+ #a = attachment point in \%
+ #d = detachment point in \%
+ #r = risk free rate
+ #No = Number of simulations
+ #flag = 1
+
+ TM <- 5                     # length of the CDO     
+ tstep <- 0.5                # the coupon payments     
+ nn  = n * N                 # the total notional     
+ loss = n * ( 1 - R)         # the total loss where R is recovery Rate
+ T <- seq(0,TM,tstep)        # vector for the fixed coupon dates     
+ Tmod <- t(array(rep(T,N), dim=c(length(T),N))) # matrix of fixed coupon dates for all N companies     
+ discount <- exp(-r*T[2:length(T)])   # discounted fixed coupon vect
+
+# just to initialize the generator     
+
+ MRho = repmat(rho,N,N);      # initialize the correlation matrix     
+ for (i in 1:length(MRho[1,])) { MRho[i,i] <- 1 }  # fill diagonal entries with 1      
+     
+ MRho <- chol(MRho)          # doing the Cholesky factorization     
+ fixedtot <- 0                # initializing for fixed leg total     
+ floattot <- 0                # initializing for floating leg total     
+ sqfixtot <- 0                # for standard error estimate     
+ sqfltot  <- 0                # for standard error estimate   
+
+ Values <- N * No
+ PMat <- array(rnorm(Values),dim=c(N,No)) # N rows, No columns
+  
+ PMat1 <- t(MRho) %*% PMat         # to get the correlated Gaussian matrix  
+   
+ PMat11 <- pnorm(PMat1) # take the CDF to make them a copula     
+
+ PMat2 <- -log(1 - PMat11)/ lambdaf    # inverse function to get the default time    
+
+# Begin MC simulations 
+ for (i in 1:No)                   # loop for different paths of MC 
+{       
+ PMat3 <- PMat2[,i]                # getting the i'th path        
+ Pmatmod <-repmat(PMat3,1,2*TM+1)  # getting it for the fixed coupon dates        
+ Temp1 <- Pmatmod < Tmod           # keeping default times that are only within the CDS maturity        
+ Lmat <- loss*Temp1                # getting the losses matrix * defaults            
+ Tloss <- colSums(Lmat)            # sum  losses         
+ Ploss <- Tloss/nn                 # get loss percentages  
+ PlossSum <- rep(0,length(Tloss))
+ for (j in 1:length(Ploss))
+	{ PlossSum[j] <- max(Ploss[j]-a,0) - max(Ploss[j]-d,0)        }
+ #Plossum <- max(Ploss-a,0)-max(Ploss-d,0)  # getting the loss percentage in the tranche         
+ Lossum <- PlossSum*nn                        # getting the absolute loss in the tranche         
+ tempplos <- PlossSum[2:length(PlossSum)]-PlossSum[1:length(PlossSum)-1] #          
+ temp2 <- nn * tempplos         
+ temp <- nn*(d-a-PlossSum)                        # getting the notional left in the tranche                
+ coupon <- tstep*(temp[1:length(temp)-1] + temp[2:length(temp)])/2 # getting the fixed coupons 
+        
+ fl_flows <- discount*temp2                      # getting the discounted floating flows         
+ fx_flows <- discount*coupon*c                  # getting the discounted fixed flows         
+
+ Vfloat <- sum(fl_flows)                          # the total floating flows for this path         
+ floattot <- floattot + Vfloat                  # the total floating flows until now         
+ sqfltot  <- sqfltot  + (Vfloat^2)              # to get the standard error square term         
+ Vfixed <- sum(fx_flows)                          # the total fixed flows for this path         
+ fixedtot <- fixedtot + Vfixed                  # the total fixed flows until now         
+ sqfixtot <- sqfixtot + (Vfixed^2)              # to get the standard error square term     
+
+}    
+
+# End MC simulations
+
+
+
+result <- 0
+result[1] <- fixedtot/No    
+#Monte Carlo floating leg estimate  
+result[2] <- floattot/No    
+#CDO Value estimate   
+result[3] <- (floattot - fixedtot)/No    
+#Monte Carlo Breakeven Spread 
+result[4] <- floattot/(fixedtot/c)    
+#Monte Carlo Fixed leg std error
+result[5] <-  (1/No) * sqrt(sqfixtot - ((1/No) * (fixedtot^2)))    
+#Monte Carlo Floating leg std error 
+result[6] <- (1/No) * sqrt(sqfltot - ((1/No) * (floattot^2)))     
+
+# return the breakeven spread ALONE for simulation purposes
+return(result[4])
+
+}
+
+\end{lstlisting}
+\end{singlespace}
+
+\section{NTD Pricing}
+
+\begin{singlespace}
+\lstset{basicstyle=\scriptsize, 
+keywordstyle=\color{black}\bfseries,
+commentstyle=\color{white}, % white comments
+stringstyle=\ttfamily, % typewriter type for strings
+belowskip=0pt,
+aboveskip=0pt,
+showstringspaces=false}
+\begin{lstlisting}
+
+#Calculates spread of nth to default swap using procedure mentioned  
+#in Appendix A of Hull and White 2004 paper 
+#Valuation of an Without Monte Carlo Simulati NTD
+# using a recurrence relationship.
+
+#getBasketSpread(0.01,10,1,0.3,0.4,5)
+#getBasketSpread(0.01,10,2,0.3,0.4,5)
+#getBasketSpread(0.01,10,3,0.3,0.4,5)
+#getBasketSpread(0.01,10,4,0.3,0.4,5)
+#getBasketSpread(0.01,10,5,0.3,0.4,5)
+
+getBasketSpread <- function(intensity,obligors,seniority,corr,rec,maturity)
+{
+
+#--------- Parameters  ---------- 
+lambda<-intensity  	#Default intensity for all firms 
+N<-obligors  		#No of obligors 
+k<-seniority  		#seniority level eg 2nd to default swap 
+rho<-corr  			#correlation between each pair of entities 
+T <- maturity  		#maturity of default swap 
+r<-0.05  			#risk free rate  
+Recovery_rate<-rec  	#recovery rate 
+delta <- 0.5  		#semi-annual fixing 
+ntimesubsteps<-4  	#no. of sub timesubsteps within each delta for int 
+#---------------------------------------   
+
+
+bdebug<-0  
+n<-T/delta  #time steps for indexing preminum payments 
+dt<-delta  
+dt2<-dt/ntimesubsteps   
+
+tmpintegrand <- function(M) 	
+{
+
+	ai<-rho^0.5  	
+	Qi<-1-exp(-lambda*g_t)	# Follow a Poisson process
+	Fi<-qt(Qi,5)  	
+	ai2<-(1-ai*ai)^.5  
+	#tadjust<-(rchisq(1,5)/5)^0.5
+	K <- M *sqrt(0.6)
+	#K <- M
+	tmp<-(Fi-ai*(K))/ai2  	
+	Si<-(1-pt(tmp,5))  	#probability of survival of each firm 	
+	piT0<-Si^N  		#probability that all firms will survive 
+	wi<-(1-Si)/Si
+	 	
+	Vvec<-array(c(rep(wi,N)),dim = c(1,N))
+
+	idxvec<-array(c(1:N),dim = c(1,N))
+	Vvec<-N*(Vvec^idxvec)  	
+	Uvec<-array(c(rep(0,N)),dim = c(1,N))
+
+	Uvec[1]<-Vvec[1]  	
+	piTvec<-array(c(rep(0,N)),dim = c(1,N))  	
+
+	for(ki in 2:N)
+	{ 		
+		tmpsum<-0  		
+		for(ki2 in 1:(ki-1)) 	
+		{		
+			tmpsum <- tmpsum-(-1)^(ki2)*Uvec[ki-ki2]*Vvec[ki2]
+		}
+	
+		tmpsum <- tmpsum+(-1)^(ki+1)*Vvec[ki]	
+		Uvec[ki] <- (tmpsum/ki)
+	}
+
+	piTvec<-outer(Uvec,piT0,"*")
+	
+	survival_prob<-1-sum(piTvec[k:N]) 
+	
+	return(survival_prob*dt(K,5))
+
+}  
+
+if (bdebug == 0)	
+{
+	SurvivalProbMat<-array(0,dim=c(ntimesubsteps*n+1,2))	
+	t1<-0
+	for(i in 1:length(SurvivalProbMat[,1]))
+	{ 		
+		g_t<-t1  		
+		SurvivalProbMat[i,1]<-t1 
+		result<-integrate(Vectorize(tmpintegrand),-10,10)
+
+		numRes<-as.numeric(result[1])
+		SurvivalProbMat[i,2] <- numRes
+		t1<-(t1+dt2)  	
+	} 
+}
+
+#SurvivalProbMat  
+DP<-0  #Expected value of average default leg payments 
+PL<-0  #Expected value of average Premium leg payments 
+AP<-0  #Expected value of average Accrued premium  
+
+for (i in 2:length(SurvivalProbMat[,1]))
+{ 	
+	t<-SurvivalProbMat[i,1] 	
+	B<-exp(-r*t)  	
+	defaultProb<-(1-SurvivalProbMat[i,2])-(1-SurvivalProbMat[i-1,2])  	
+	DP<-DP+(1-Recovery_rate)*B*defaultProb  
+	if ((t%%delta) < 0.01) 		
+	{
+		PL<-PL+delta*B*SurvivalProbMat[i,2]  		
+		AP<-AP+delta*B*defaultProb  			
+	}
+	else if (t > delta)
+	{
+		tgap<-t%%delta 		
+		AP<-AP+tgap*B*defaultProb  	
+	}
+}
+
+#DP 
+#PL 
+#AP  
+
+spread<-10000*DP/(PL+AP)
+return(spread)
+
+}
+
+\end{lstlisting}
+\end{singlespace}
+
+
+
+
+\section{Implied Compound Curve Generation}\label{sec:imp}
+
+\begin{singlespace}
+\lstset{basicstyle=\scriptsize, 
+keywordstyle=\color{black}\bfseries,
+commentstyle=\color{white}, % white comments
+stringstyle=\ttfamily, % typewriter type for strings
+belowskip=0pt,
+aboveskip=0pt,
+showstringspaces=false}
+\begin{lstlisting}
+
+implied_correlation <- function(mktSpread, lower, upper, initialCorr=0.3)
+{
+
+	ACCURACY <- 1.0e-3
+	MAX_ITER <- 100
+	HIGH_VALUE <- 1
+	ERROR <- -1e40
+
+	corr_low <- 1e-4
+	corr_high <- initialCorr
+	
+	spread <- getSpread(corr_high,lower,upper)
+
+
+	while (spread < mktSpread)
+	{
+		corr_high <- 2.0 * corr_high
+		spread <- getSpread(corr_high,lower,upper)
+
+		if (corr_high > HIGH_VALUE) return(ERROR)
+
+	}
+
+	for (i in 0:MAX_ITER)
+	{
+			
+		corr <- ((corr_low + corr_high) * 0.5)
+		spread <- getSpread(corr,lower,upper)
+		test <- spread-mktSpread
+		if (abs(test) < ACCURACY)
+		{
+			return(corr)
+		}
+
+		if (test < 0.0) 
+		{ 
+			corr_low <- corr 
+			print('test is less than 0')
+		}
+		else
+		{
+		  	corr_high <- corr
+			print('test is greater than 0')
+
+		}
+
+	}
+
+	return(ERROR)
+}
+
+\end{lstlisting}
+
+\end{singlespace}
+
+\section{Default Probability Generation}
+
+\begin{singlespace}
+\lstset{basicstyle=\scriptsize, 
+keywordstyle=\color{black}\bfseries,
+commentstyle=\color{white}, % white comments
+stringstyle=\ttfamily, % typewriter type for strings
+belowskip=0pt,
+aboveskip=0pt,
+showstringspaces=false}
+\begin{lstlisting}
+
+
+Simulations <- 100000
+Loans <- 50
+Tranches <- 3
+
+w <- 0.3 ## what is this in the Nomura correlation primer doc?
+
+attachmentPoints <- c(0.0,0.03,0.07,1)
+EADs <- rep(1,Loans)
+LGDs <- rep(0.5,Loans)
+defaultProbs <- rep(0.01,Loans)
+attachmentPoints
+EADs
+LGDs
+defaultProbs
+
+sumEADs <- sum(EADs)
+sumEADs
+
+normalizedEADs <- EADs/sumEADs
+normalizedEADs
+
+d <- qnorm(defaultProbs)
+d
+
+wArray <- rep(w,Loans)
+w2Array <- rep( (1 - w*w)^0.5, Loans)
+wArray
+w2Array
+
+# rnorm(1,mean=0,sd=1) 
+factor <- rnorm(1)
+factor
+
+tranchePD <- rep(0,length(attachmentPoints)-1)
+currentLoss <- rep(0,Loans)
+length(attachmentPoints)
+
+for(i in 1:Simulations) 
+{
+	factor <- rnorm(1)
+	factor
+	loss_j <- 0
+	for (j in 1:Loans)
+	{
+		if ((wArray[j] * factor + w2Array[j] * rnorm(1)) < d[j]) 
+		loss_j <- (loss_j + (LGDs[j] * normalizedEADs[j]))
+	}
+  
+	for (k in 1:(length(attachmentPoints)-1))
+	{
+		if (loss_j - attachmentPoints[k] > 10^-15)
+		{
+			tranchePD[k] = tranchePD[k] + 1/Simulations
+		}
+	}
+
+}
+
+
+simCDO <- function(matri,c1,c2,Sims,PortfolioSize)
+{
+
+lgd=matri[c1];
+w=matri[c2];
+
+Simulations <- Sims
+Loans <- PortfolioSize
+Tranches <- 3
+attachmentPoints <- c(0.0,0.03,0.07,1)
+EADs <- rep(1,Loans)
+LGDs <- rep(lgd,Loans)
+defaultProbs <- rep(0.01,Loans)
+
+sumEADs <- sum(EADs)
+normalizedEADs <- EADs/sumEADs
+d <- qnorm(defaultProbs)
+wArray <- rep(w,Loans)
+w2Array <- rep( (1 - w*w)^0.5, Loans)
+factor <- rnorm(1)
+
+tranchePD <- rep(0,length(attachmentPoints)-1)
+
+for(i in 1:Simulations) 
+{
+	factor <- rnorm(1)
+	factor
+	loss_j <- 0
+	for (j in 1:Loans)
+	{
+		if ((wArray[j] * factor + w2Array[j] * rnorm(1)) < d[j]) 
+		loss_j <- (loss_j + (LGDs[j] * normalizedEADs[j]))
+	}
+  
+	for (k in 1:(length(attachmentPoints)-1))
+	{
+		if (loss_j - attachmentPoints[k] > 10^-15)
+		{
+			tranchePD[k] = tranchePD[k] + 1/Simulations
+		}
+	}
+
+}
+
+	return(c(tranchePD))
+
+}
+
+\end{lstlisting}
+\end{singlespace}
+
+
+\section{Example of a surface generation in R}\label{sec:surface}
+\begin{singlespace}
+\lstset{basicstyle=\scriptsize, 
+keywordstyle=\color{black}\bfseries,
+commentstyle=\color{white}, % white comments
+stringstyle=\ttfamily, % typewriter type for strings
+belowskip=0pt,
+aboveskip=0pt,
+showstringspaces=false}
+\begin{lstlisting}
+
+simCDO2 <- function(matri,c1,c2,sims,trancheLow,trancheHigh)
+{
+rec=matri[c1];
+correl=matri[c2];
+	return(c((CDOPrice(100,rec,0.01,correl,1,1,
+				trancheLow,trancheHigh,0.04,sims,1))))
+
+}
+recovery <- seq(0.05,0.95,by=0.05)
+correlation <- seq(0.05,0.95,by=0.05)
+t1 <- rep(recovery,19)
+s1 <- rep(correlation,each=19)
+
+m1 <- cbind(t1,s1)
+
+spreads <- apply(m1,1, simCDO2, c1="t1", c2="s1", 
+				trancheLow=0.06, trancheHigh=0.09, sims=10000)
+
+
+trellis.par.set("axis.line", list(col="transparent"),
+	clip = list(panel = "off"))
+
+trellis.par.set(theme = col.whitebg())
+poly.border<-trellis.par.get("box.rectangle")
+poly.border\$border<-"green"
+trellis.par.set("box.rectangle",poly.border)
+
+fig5 <- wireframe(spreads ~ t1 * s1, 
+	scales = list(arrows=FALSE, cex= .55, col = "black", font = 3), 
+	drape = TRUE,
+	screen = list(z = -60, x = -75),
+	aspect = c(1,1),
+	light.source = c(100,0,50),
+	colorkey = FALSE,
+	xlab = expression(paste(Recovery)),
+	ylab = expression(paste(Correlation)),
+	zlab = list(label = "Breakeven Spread", rot = 90),
+	split = c(1,1,2,1),
+	zlim = range(seq(0,0.06,0.0005))
+)
+
+\end{lstlisting}
+\end{singlespace}
+
+
+
+

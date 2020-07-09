@@ -1,0 +1,60 @@
+\chapter{Summary and Conclusion}\label{chap:conclusion}
+
+In this report we have introduced Credit Derivative Pricing mechanisms. 
+Additionally we have investigated price surfaces for these products.
+
+The Credit Crisis of 2007 resulted in even the senior tranches having their ratings
+downgraded.  Effects of this were exemplified in citigroup losing \$43 billion on its
+books despite most of this being held within CDO senior tranches \cite{econ2008cracks}.
+
+
+\section{Credit Derivatives and Basel II}\label{sec:conc_baselII}\index{Basel II}
+
+Under Basel I for every dollar lent to a corporation it was required that the lending bank held 8 cents in equity, irrespective of its ratings whether it was AAA or CCC.  Basel II was formulated to introduce a sensitivity to the risk of exposure.
+
+For Banks, high exposure to CDO equity tranches will generate high capital charges under Basel II.  Basel II show that the correlation coefficient is a function of the default probability. The Basel Committee employ a one-factor model of portfolio credit risk \cite{lp2007}. Basel II will align regulatory capital charges with actual credit risks. This will provide more recognition of hedged portfolios \cite{Gib2007}. In the light of the Credit Crisis early application of Basel II might have reduced the losses incurred by the large banks.  As we have stated banks held most of the equity tranches and our simulations, in line with market data, have shown this to be the most costly tranche.
+
+\section{Tranching and the Credit Crisis of 2007}\label{sec:conc_crisis}\index{Credit Crisis}
+
+Credit Derivative instruments are based upon bilateral contracts whose pay out is linked to the performance of a credit claim issued by a third party.  As such they have 3 characteristics which, I believe, have led to their success in the past few years.  Firstly, they enable clear separation between the creditor and the risk-bearer. Secondly, the claim, if made, will be on the contract counterparty not on the third party issuing the contract.  Finally, and of most import in the subprime crisis, they allow for the structured selling of credit risk positions including the shorting of credit.  This repackaging of loans, interest payments, and other default risks into securities has allowed more people to gain access to credit.  It is this securitisation of the subprime sector which caused the current crisis.  Many of the CDOs counted on volatility remaining low and used high leverage instruments; these were the first instruments to see losses. As the notional amount of outstanding credit derivatives began to exceed the actual amount of underlying debt credit exposure was leveraged through these credit derivatives. This incentivised the reason to create credit risk \cite{fgz2004} leading to an overall increase in systematic risk within the system, which we saw develop in mid 2007.\\
+
+What were the triggers? Was it the end of the teaser rates and the first defaults on the part of subprime borrowers occurring in late Spring 2007?  In June 2007 Moodys downgraded 131 Asset Backed Securities (ABS) and 5 days later Bear Stearns announced that 2 of their hedge funds had suffered losses on subprime securities and were close to being shut down.  One hedge fund received a \$3.2 billion bail out but further deals were downgraded in July 2007 by both Moodys and S\&P including 184 CDO tranches.  As a result of this banks suddenly became reluctant to lend to each other; the overnight libor rates shot up as any counterparty could now be a bad risk.  By August 2007 some funds were frozen citing an inability to value them under the current market conditions. It was time for the central banks to step in.
+The structuring of the credit instruments meant that they could be marked 3A1 by ratings agencies as lenders split the products from their risk of default.  This was obviously a miscalculation on their part and should never have happened.  Can we now trust the ratings agencies given that they are paid by the firms which created these credit securities?  In their defence they have correctly stated that their job was to measure credit and not liquidity risk. The question of whether a AAA rated corporate bond should be treated the same as a AAA senior tranche of a CDO remains open. 
+
+\medskip
+In Spring 2008 spreads of senior tranches had widened to such a degree that the Gaussian Copula model no longer worked.  Industry {\em quick} fixes to this of lowering recovery rates, or as suggested in \cite{Kre2008,AH2008}, of using random recovery rates seem to have rapidly been applied.
+
+It is also important to note that credit derivatives do not eliminate credit risk but merely shift it around. The recent crisis has suggested that many market participants did not fully consider their credit riskiness when entering into CDO positions. As stated in \cite{bv2005} the top 15 global banks held three quarters of all credit risk protection that had been bought or sold; this was surely a cliff edge on which to stand.
+
+
+\section{Directions for future research within Credit Derivatives}
+
+
+This report notes the following {\em important} open problems:
+\begin{itemize}
+\item Valuing a CDO$^2$ - There is no real way to know the correct correlation for these so are Gaussian Copulas in any way the correct function to use? 
+\item Exchange traded futures based on iTraxx indices to be launched.  This will increase the liquidity and transparency of Credit Derivative products.
+\item Applying computationally intensive optimisation processes to derive the correlation structure of CDOs from tranche spreads. There are numerous optimization methodologies for achieving this and we refer the interested reader to \cite{hs2006} who make use of Evolutionary Algorithms.
+\item Incorporating multifactor pricing models would have provided an interesting avenue for further work within this project.
+\item Further study of random recovery rates and random factor loadings, particularly in the current market.
+\end{itemize}
+
+\section{Conclusions}
+
+Credit Derivatives are an immature market \cite{Gib2007} but their huge increase in growth over the last decade shows how eager firms are to manage and transfer their credit risk.  After the initial fluctuations of the credit crisis it is highly likely that complex credit products will become even more popular though with more caution from all investors.
+
+In this project we have provided an overview of the Credit Derivatives market, defined and motivated CDOs and NTDs (including FTDs). We have examined the pricing of these instruments as their determinant parameters are varied, such as the recovery rate, correlation, default intensity and factor sensitivity.  These simulations were implemented in $R$, their structure is defined in Appendix~\ref{app:sim_meth} and, for completists, the code itself is in Appendix~\ref{app:code}.  We have also used the pricing mechanisms of CDOs to study the implied correlation {\em smile} and the base correlation {\em skew}.  We have presented a (brief) comparison of these pricing models. We have concluded that there are difficulties with the base correlation model in the light of current market conditions and this is currently a rapidly developing area.
+
+\medskip
+
+Our conclusions are as follows:-
+\begin{enumerate}
+\item	We have shown that NTD spreads vary with the default position and this is a downward slope for increasing correlation for lower seniority NTDs (e.g. FTD where seniority = 1) and an upward slope for higher seniorities.  A higher correlation suggests less chance of default for FTD and more for NTDs. Intensity was also examined and can lead to sharp increases as it varies (figure~\ref{fig:IntensityBasketSpreads}).
+\item	We have shown that CDO tranche spreads vary according to the tranche and differently with correlation between tranches. High equity tranche spreads are generated by the Gaussian copula pricing approach and these suffered the greatest losses in the Credit Crisis of 2007-2008.
+\item We have examined factor sensitivities and default probabilities and shown that these have an inverse relationship between the equity and the mezzanine/senior tranches. Factor sensitivities need to be high for senior tranche default.
+\item The correlation smile was found for recent market data and so we implemented a base correlation approach. Interesting avenues exist for developing this further including random recovery rates and random factor loadings and if the market problems of 2008 with base correlation pricing are not to occur again further work must be carried out.
+\end{enumerate}
+
+
+
+

@@ -1,0 +1,66 @@
+\chapter{Simulation Methodology}\label{app:sim_meth}
+
+We now describe our process for conducting simulations.  The code was implemented in is S language and executed within the R system.  
+Additional R packages were used for implementation purposes. \cite{yan2007} presents an interesting overview of the R copula package.
+
+\section{Simulation Details: Pricing Credit Derivatives}\label{sec:sim_er}
+
+\subsection{Simulation Implementation Decisions}
+
+To generate a matrix of correlated standard normal variables $X = (X_1, X_2, \ldots, X_n)$ we can either:
+\begin{enumerate}
+\item Apply a Cholesky decomposition\footnote{A symmetric positive-definite matrix can be efficiently decomposed into a lower triangular matrix $L$ and $L^T$} to $\Sigma = AA^T$, generate $n$ i.i.d. standard normal random numbers $z_1, z_2, \ldots z_n \in N(0,1)$ and set $\underline{X} = A\underline{z}$ where
+$X = (X_1, X_2, \ldots, X_n)$ are correlated random numbers fitting the joint normal distribution, or
+\item Apply the form factor model shown in equation~\ref{eq:onefactor}
+\end{enumerate}
+
+In our code shown in Appendix~\ref{app:code} we show NTDs implemented with the latter and CDOs implemented via application of Cholesky decomposition.
+
+\medskip
+
+\subsection{Verification of Code}\label{subsec:code_verif}
+
+Results for our pricing code were initially verified using equivalent input data to that of \cite{hw2004,KL2004}.  We then proceeded to conduct our simulations on more recent data obtained from {\em datastream} and http://www.creditfixings.com.\\
+
+Tables 1 and 2 were used for comparing NTDs and Tables 7 to 9 were used for verification of our CDO pricing process.  Default probability were also compared with sample data provided in \cite{lp2007} within spreadsheet format.
+
+
+
+\subsection{Solving for Implied and Base Correlation}\label{subsec:impCorrSolve}
+
+Our implied and base correlation figures were achieved using a simple one-dimensional
+root solving procedure.  This is provided in $R$ with the uniroot function and extensions
+of this.  We reimplemented this to achieve bespoke functionality for CDOs using a simple
+bisection process.
+
+\subsection{Monte Carlo Procedures}\label{subsec:monte}
+
+We outline the procedure for a Monte Carlo generation of the default leg of 
+an NTD \cite{Sch2003}.
+
+\begin{enumerate}
+\item Generate independent samples of standard normal variables $Z_0, Z_1, \ldots , Z_n$
+\item Generate correlated normal variables with $X_i = \sqrt{ \rho } M + \sqrt{ 1 - \rho } \epsilon_i$, $1 \leq i \leq n$.
+\item Set $U_i = \phi(X_i)$, $1 \leq i \leq n$ and $\tau_i = F_i^{-1} (U_i)$, $1 \leq i \leq n$
+\item Set t to the $n^{th}$ order statistic of $t_0, t_1, \ldots , t_n$
+\item Set the discounted payoff = $(1 - R) * I(\tau \leq T) * P(0, \tau)$
+\item Repeat step 1 to 6 m times to obtain the confidence interval of the default leg. This can then be constructed with the m copies of the discounted payoff.
+\end{enumerate}
+
+For accuracy we set $m = 50000$ or $m = 100000$.
+\smallskip
+
+\subsection{Accuracy of Monte Carlo Simulations}\label{subsec:accuracy}
+
+Monte Carlo processes can take many hours to run and do not guarantee a correct result.  How do we assess what simulation size we will have an accurate result within tolerance limits?
+
+We could do the following:
+\begin{enumerate}
+\item	Run our desired simulation for a very large number of trials (from 1-10 million)
+\item	Run for a specific number of trials that can be easily repeated (say 50000 ). This provides us with an unbiased estimator to the true value.
+\item	Assess our sample statistics and standard error comparing stages 1 and 2 and form a confidence interval for our price (based on the central limit theorem).  If stage 2 presents us with a confidence interval that is still too large then we increment out sample size by, say, 10000, and return to stage 2.  Repeat this until we are inside our tolerance levels.
+\end{enumerate}
+
+Time constraints for this project prevented a more formal analysis of our choice of simulation size for NTD and CDO pricing.
+
+
