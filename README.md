@@ -1,4 +1,5 @@
 # MScFinanceThesis_CredDeriv
+---
 ## An Investigation into Price Surfaces for Credit Derivatives and the 2008 Credit Crisis
 
 ### Birkbeck College, University of London
