@@ -10,9 +10,9 @@ The introduction of the iTraxx and CDX Credit Indices in June 2004 allowed for i
 
 Our study looks at the impacts of recovery rates, correlation and default time on the price surfaces for multi-name Credit Derivatives and how these may be calibrated. We compare and analyse the risk profiles of different NTDs and CDO tranches.  For NTDs we examine default intensity and recovery rate variations. For CDOs we analyse tranche spreads, factor sensitivities, and recovery rates as well as the survival probabilities of the obligors. We conclude with a discussion on tranching relative to the credit crisis of 2007-2008. All simulations were implemented in **R** which we detail in the Appendix (see repository [R-CredDeriv](https://github.com/scienceMiner/R-CredDeriv) )
 
-The Structure of a CDO:-
-
-![t1](https://user-images.githubusercontent.com/19819315/140564293-8c521999-5a44-4e86-8e59-f5e01a4511cb.png)
-
 CDO simulation senior tranche correlation and recovery rates:-
 ![CDOsim_Aug28_RecCor_SupSenTranche22_100](https://user-images.githubusercontent.com/19819315/140570952-bfc759a9-a81a-4cf9-bd3a-6a923389125b.png)
+
+The Structure of a CDO:-
+![t1](https://user-images.githubusercontent.com/19819315/140564293-8c521999-5a44-4e86-8e59-f5e01a4511cb.png)
+
