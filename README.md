@@ -13,3 +13,6 @@ Our study looks at the impacts of recovery rates, correlation and default time o
 The Structure of a CDO:-
 
 ![t1](https://user-images.githubusercontent.com/19819315/140564293-8c521999-5a44-4e86-8e59-f5e01a4511cb.png)
+
+CDO simulation senior tranche correlation and recovery rates:-
+![CDOsim_Aug28_RecCor_SupSenTranche22_100](https://user-images.githubusercontent.com/19819315/140570952-bfc759a9-a81a-4cf9-bd3a-6a923389125b.png)
